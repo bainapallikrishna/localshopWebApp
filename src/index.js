@@ -1,13 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App';
+import StateandProps from './components/stateandprops';
 import reportWebVitals from './reportWebVitals';
-
+import CounterApp from './components/CounterApp';
+import PropDrillingExample from './components/PropDrilling';
+import TodoList from './components/TodoList';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+
+    
+    <TodoList />
   </React.StrictMode>
 );
 
