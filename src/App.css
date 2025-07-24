@@ -63,3 +63,14 @@ main {
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+.active{
+  background-color: blue;
+  color: white;
+}
+.inactive{
+  background-color: gray;
+  color: black;
+}
+.primary{
+  background-color: blue;
+}

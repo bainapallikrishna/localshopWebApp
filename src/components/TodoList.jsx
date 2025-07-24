@@ -5,8 +5,13 @@ function TodoList()
 {
     const [todos, setTodos] = useState([]);
     const [newTodo, setNewTodo] = useState("");
+        console.log(todos);
+        console.log(newTodo);
     const addTodoList=()=>{
+       
         setTodos([...todos, newTodo]);
+    console.log(todos);
+        console.log(newTodo);
         setNewTodo("");
     }
     const removeTodo = (index) => {
