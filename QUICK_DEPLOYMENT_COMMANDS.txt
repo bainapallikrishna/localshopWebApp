@@ -1,0 +1,60 @@
+================================================================================
+                    QUICK DEPLOYMENT COMMANDS
+                    ===========================
+
+SAVE THIS FILE FOR QUICK REFERENCE!
+
+================================================================================
+
+EVERY TIME YOU WANT TO DEPLOY:
+===============================
+
+1. Open PowerShell in your project directory:
+   cd C:\Krishna\FRONTEND\localshop
+
+2. Add Azure CLI to PATH (if needed):
+   $env:PATH += ";C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin"
+
+3. Login to Azure (if needed):
+   az login
+
+4. Run deployment script:
+   .\Deploy-ReactApp.ps1
+
+================================================================================
+
+MANUAL DEPLOYMENT (if script fails):
+====================================
+
+1. Build your app:
+   npm run build
+
+2. Deploy manually:
+   swa deploy `
+     --app-name LocalShopWebApp `
+     --resource-group LocalShopRG `
+     --deployment-token 52b76e977f19d30547ba169ccea57f0b4c565e9b8cfbd178ac2427dc7fae496101-4c0f8d97-45e2-4d09-a1f1-acfbe441ad9b00022100c3ffaa00 `
+     --env production `
+     --output-location build
+
+================================================================================
+
+YOUR APP WILL BE AVAILABLE AT:
+==============================
+https://LocalShopWebApp.azurestaticapps.net
+
+================================================================================
+
+TROUBLESHOOTING:
+================
+
+If "az not recognized":
+   $env:PATH += ";C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin"
+
+If "swa not recognized":
+   npm install -g @azure/static-web-apps-cli
+
+If build fails:
+   Check your React code for syntax errors
+
+================================================================================
