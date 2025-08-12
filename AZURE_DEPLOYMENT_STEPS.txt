@@ -1,0 +1,231 @@
+================================================================================
+                    AZURE STATIC WEB APPS DEPLOYMENT GUIDE
+                    ======================================
+
+This guide contains ALL the steps needed to deploy your React app to Azure Static Web Apps.
+Save this file for future reference!
+
+================================================================================
+
+PREREQUISITES CHECKLIST:
+=======================
+□ Azure Account (Active subscription)
+□ Node.js installed (version 14 or higher)
+□ Git installed
+□ PowerShell or Command Prompt access
+
+================================================================================
+
+STEP 1: INSTALL AZURE CLI
+=========================
+1. Open PowerShell as Administrator
+2. Run this command:
+   winget install Microsoft.AzureCLI
+
+3. Close and reopen PowerShell (to refresh PATH)
+
+4. Verify installation:
+   az --version
+
+If you get "az not recognized" error, manually add to PATH:
+   $env:PATH += ";C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin"
+
+================================================================================
+
+STEP 2: LOGIN TO AZURE
+======================
+1. Open PowerShell
+2. Run: az login
+3. A browser window will open
+4. Sign in with your Azure account credentials
+5. Select your subscription if prompted
+6. Verify login: az account show
+
+================================================================================
+
+STEP 3: CREATE AZURE RESOURCES (If not exists)
+==============================================
+1. Create Resource Group:
+   az group create --name LocalShopRG --location "South India"
+
+2. Create Static Web App:
+   az staticwebapp create `
+     --name LocalShopWebApp `
+     --resource-group LocalShopRG `
+     --location "South India" `
+     --source https://github.com/yourusername/yourrepo `
+     --branch main `
+     --app-location "/" `
+     --output-location "build"
+
+Note: Replace "yourusername/yourrepo" with your actual GitHub repository
+
+================================================================================
+
+STEP 4: GET DEPLOYMENT TOKEN
+============================
+1. Get your deployment token:
+   az staticwebapp secrets list --name LocalShopWebApp --resource-group LocalShopRG --query "properties.apiKey" -o tsv
+
+2. Copy the token (it's a long string)
+
+3. Update your Deploy-ReactApp.ps1 file with this token:
+   $DeploymentToken = "YOUR_ACTUAL_TOKEN_HERE"
+
+================================================================================
+
+STEP 5: INSTALL SWA CLI
+========================
+1. Install the Azure Static Web Apps CLI:
+   npm install -g @azure/static-web-apps-cli
+
+2. Verify installation:
+   swa --version
+
+================================================================================
+
+STEP 6: BUILD YOUR REACT APP
+============================
+1. Navigate to your React project directory:
+   cd C:\Krishna\FRONTEND\localshop
+
+2. Install dependencies (if not already done):
+   npm install
+
+3. Build the app:
+   npm run build
+
+4. Verify build folder exists:
+   ls build
+
+================================================================================
+
+STEP 7: DEPLOY TO AZURE
+========================
+1. Make sure you're in your React project directory
+2. Run the deployment script:
+   .\Deploy-ReactApp.ps1
+
+OR manually deploy:
+   swa deploy `
+     --app-name LocalShopWebApp `
+     --resource-group LocalShopRG `
+     --deployment-token YOUR_TOKEN_HERE `
+     --env production `
+     --output-location build
+
+================================================================================
+
+STEP 8: VERIFY DEPLOYMENT
+=========================
+1. Check deployment status in Azure portal
+2. Your app will be available at:
+   https://LocalShopWebApp.azurestaticapps.net
+
+================================================================================
+
+TROUBLESHOOTING COMMON ISSUES:
+==============================
+
+ISSUE: "az not recognized"
+SOLUTION: Add Azure CLI to PATH:
+   $env:PATH += ";C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin"
+
+ISSUE: "swa not recognized"
+SOLUTION: Install SWA CLI:
+   npm install -g @azure/static-web-apps-cli
+
+ISSUE: Build fails
+SOLUTION: Check for syntax errors in your React code
+
+ISSUE: Deployment token invalid
+SOLUTION: Regenerate token:
+   az staticwebapp secrets list --name LocalShopWebApp --resource-group LocalShopRG
+
+ISSUE: Resource group not found
+SOLUTION: Create it first:
+   az group create --name LocalShopRG --location "South India"
+
+================================================================================
+
+USEFUL COMMANDS FOR REFERENCE:
+==============================
+
+# Check Azure CLI version
+az --version
+
+# Check SWA CLI version
+swa --version
+
+# List resource groups
+az group list
+
+# List Static Web Apps
+az staticwebapp list --resource-group LocalShopRG
+
+# Get Static Web App details
+az staticwebapp show --name LocalShopWebApp --resource-group LocalShopRG
+
+# Get deployment token
+az staticwebapp secrets list --name LocalShopWebApp --resource-group LocalShopRG --query "properties.apiKey" -o tsv
+
+# Delete Static Web App (if needed)
+az staticwebapp delete --name LocalShopWebApp --resource-group LocalShopRG
+
+# Delete Resource Group (if needed)
+az group delete --name LocalShopRG --yes
+
+================================================================================
+
+AUTOMATED DEPLOYMENT WITH GITHUB ACTIONS:
+=========================================
+
+1. Push your code to GitHub
+2. Set GitHub secret: AZURE_STATIC_WEB_APPS_API_TOKEN
+3. The .github/workflows/azure-deploy.yml will auto-deploy on push to main
+
+================================================================================
+
+CONFIGURATION FILES:
+====================
+
+1. staticwebapp.config.json (in public folder) - Azure routing config
+2. .github/workflows/azure-deploy.yml - GitHub Actions workflow
+3. Deploy-ReactApp.ps1 - PowerShell deployment script
+4. deploy.bat - Windows batch deployment script
+
+================================================================================
+
+POST-DEPLOYMENT:
+================
+
+1. Configure custom domain (optional)
+2. Set up authentication (optional)
+3. Monitor with Azure Application Insights (optional)
+4. Set up CI/CD pipeline
+
+================================================================================
+
+IMPORTANT NOTES:
+================
+
+- Always run PowerShell as Administrator when installing tools
+- Keep your deployment token secure
+- Update the deployment token if you regenerate it
+- The build folder is automatically cleaned before each deployment
+- Your app will be available at: https://LocalShopWebApp.azurestaticapps.net
+
+================================================================================
+
+SUPPORT RESOURCES:
+==================
+
+- Azure Static Web Apps Docs: https://docs.microsoft.com/en-us/azure/static-web-apps/
+- Azure CLI Docs: https://docs.microsoft.com/en-us/cli/azure/
+- React Deployment Guide: https://create-react-app.dev/docs/deployment/
+- GitHub Actions: https://docs.github.com/en/actions
+
+================================================================================
+
+SAVE THIS FILE FOR FUTURE REFERENCE!
+================================================================================
