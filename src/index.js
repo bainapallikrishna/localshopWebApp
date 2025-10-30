@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min';
 
 import StateandProps from './components/stateandprops';
 import reportWebVitals from './reportWebVitals';
@@ -19,14 +20,20 @@ import Products from './components/Product';
 import MasterPage from './RouteConcept/MasterPage';
 import UseRefHook from './components/UseRefHook';
 import ChildToParent from './components/ChildToParent';
-import Login from './components/Login';
+
+import App from './RouteConcept/App';
 import APICall  from './components/APICall';
+import AuthWrapper from './components/AuthWrapper';
+import { Provider } from 'react-redux';
+import store from './store';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-
-   
-    <MasterPage />
+    <Provider store={store}>
+      <AuthWrapper>
+        <App />
+      </AuthWrapper>
+    </Provider>
   </React.StrictMode>
 );
 
