@@ -5,7 +5,7 @@ pr:
   - main
 
 pool:
-  vmImage: 'ubuntu-latest'
+  name: Default   # Your self-hosted Windows agent
 
 steps:
   - checkout: self
