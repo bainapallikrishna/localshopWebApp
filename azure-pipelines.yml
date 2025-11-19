@@ -5,7 +5,7 @@ pr:
   - main
 
 pool:
-  name: Default   # Self-hosted Windows agent
+  name: Default   # Self-hosted agent pool
 
 steps:
   - checkout: self
@@ -14,40 +14,33 @@ steps:
   - task: NodeTool@0
     inputs:
       versionSpec: '18.x'
-    displayName: "Setup Node.js"
+    displayName: 'Setup Node.js'
 
-  # Install React dependencies
+  # Install dependencies
   - script: npm ci
-    displayName: "Install npm packages"
-    workingDirectory: "$(Build.SourcesDirectory)"
+    displayName: 'Install npm packages'
+    workingDirectory: '$(Build.SourcesDirectory)'
 
-  # Build the React application
+  # Build the React app
   - script: npm run build
-    displayName: "Build React app"
-    workingDirectory: "$(Build.SourcesDirectory)"
+    displayName: 'Build React app'
+    workingDirectory: '$(Build.SourcesDirectory)'
 
-  # Deploy to Azure Static Web App using Azure CLI
+  # Deploy to Azure Static Web Apps
   - task: AzureCLI@2
     inputs:
       azureSubscription: 'Azure-Service-Connection'
       scriptType: 'ps'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        Write-Host "Setting Azure CLI configuration directory..."
-        $env:AZURE_CONFIG_DIR = "$env:USERPROFILE\.azure"
+        # Make Azure CLI use the correct user config
+        $env:AZURE_CONFIG_DIR = "C:\Users\agent\.azure"
 
-        Write-Host "Disabling Azure CLI dynamic extension install..."
+        # Stop Azure CLI from trying to auto-install system extensions
         az config set extension.use_dynamic_install=no
         az config set extension.run_after_dynamic_install=no
 
-        Write-Host "Installing Static Web App extension in user mode..."
-        az extension add --name staticwebapp --user --yes --only-show-errors
+        # Confirm the staticwebapp extension is detected
+        az extension list
 
-        Write-Host "Starting Static Web App upload..."
-        az staticwebapp upload `
-          --name localShopWebApp `
-          --resource-group localShopRG `
-          --source "$(Build.SourcesDirectory)\build" `
-          --only-show-errors
-
-    displayName: "Deploy to Azure Static Web Apps"
+        # Deploy build folder to SWA
