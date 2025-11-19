@@ -5,11 +5,10 @@ pr:
   - main
 
 pool:
-  name: Default   # your self-hosted Windows agent
+  name: Default   # self-hosted Windows agent
 
 steps:
   - checkout: self
-    submodules: true
 
   # Install Node.js
   - task: NodeTool@0
@@ -17,51 +16,47 @@ steps:
       versionSpec: '18.x'
     displayName: 'Setup Node.js'
 
-  # Install dependencies
-  - script: |
-      npm ci
+  # Install React dependencies
+  - script: npm ci
     displayName: 'Install npm packages'
 
-  # Build the React app
-  - script: |
-      npm run build
-    displayName: 'Build React Application'
+  # Build React app
+  - script: npm run build
+    displayName: 'Build React app'
 
-  # Install Static Web App CLI Extension Manually
+  # Install Static Web Apps CLI extension (manual fix for Windows agents)
   - task: AzureCLI@2
     inputs:
-      azureSubscription: 'Azure-Service-Connection'   # IMPORTANT
+      azureSubscription: 'Azure-Service-Connection'  # <-- IMPORTANT
       scriptType: 'ps'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        Write-Host "Installing Static Web App CLI extension..."
+        Write-Host "Installing Static Web Apps CLI extension"
 
+        # Create extension folder
         $ext = "$env:USERPROFILE\.azure\cliextensions\staticwebapp"
         New-Item -ItemType Directory -Force -Path $ext | Out-Null
 
+        # Download the extension wheel file
         $url = "https://github.com/Azure/azure-cli-extensions/releases/latest/download/staticwebapp-1.0.0-py3-none-any.whl"
         $wheel = "$ext\staticwebapp.whl"
         Invoke-WebRequest -Uri $url -OutFile $wheel
 
+        # Install extension from wheel
         az extension add --source $wheel --yes
 
-        Write-Host "Installed Extensions:"
         az extension list
-    displayName: 'Install Static Web App CLI Extension'
+    displayName: 'Install Static Web Apps Extension'
 
-  # Deploy the React build folder
+  # Deploy without Docker
   - task: AzureCLI@2
     inputs:
-      azureSubscription: 'Azure-Service-Connection'
+      azureSubscription: 'Azure-Service-Connection' # <-- same service connection
       scriptType: 'ps'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        Write-Host "Deploying static web app..."
-
         az staticwebapp upload `
           --name localShopWebApp `
           --resource-group localShopRG `
           --source build
-
-        Write-Host "Deployment completed!"
     displayName: 'Deploy React App to Azure Static Web Apps'
