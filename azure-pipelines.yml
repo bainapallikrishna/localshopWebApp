@@ -26,28 +26,13 @@ steps:
     displayName: 'Build React app'
     workingDirectory: '$(Build.SourcesDirectory)'
 
-  # Deploy to Azure Static Web Apps using ZIP Deploy API
+  # Deploy to Azure Static Web Apps via REST API
   - task: AzureCLI@2
     inputs:
       azureSubscription: 'Azure-Service-Connection'
       scriptType: 'ps'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        # Use the correct Azure CLI profile for NetworkService agent
-        $env:AZURE_CONFIG_DIR = "C:\Windows\ServiceProfiles\NetworkService\.azure"
-
-        Write-Host "Using Azure Config Directory:"
-        Write-Host $env:AZURE_CONFIG_DIR
-
-        # Disable auto-extension install
-        az config set extension.use_dynamic_install=no
-        az config set extension.run_after_dynamic_install=no
-
-        # Confirm SWA extension is loaded
-        Write-Host "Loaded Azure CLI Extensions:"
-        az extension list
-
-        # Get SWA Deployment Token
         Write-Host "Fetching Static Web App deployment token..."
         $token = az staticwebapp secrets list `
           --name localShopWebApp `
@@ -55,29 +40,32 @@ steps:
           --query properties.apiKey `
           -o tsv
 
+        if (-not $token) {
+          Write-Error "Failed to get SWA API token"
+          exit 1
+        }
+
         Write-Host "Token retrieved."
 
-        # Create deployment ZIP from build folder
-        Write-Host "Zipping React build folder..."
+        # ZIP the build folder
+        Write-Host "Zipping build output..."
         $zipPath = "$(Build.SourcesDirectory)\build.zip"
         if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         [System.IO.Compression.ZipFile]::CreateFromDirectory("$(Build.SourcesDirectory)\build", $zipPath)
 
-        Write-Host "ZIP created at: $zipPath"
+        Write-Host "ZIP created: $zipPath"
 
-        # Deploy using SWA ZIP Deploy REST API
-        $deployUrl = "https://localShopWebApp.scm.azurewebsites.net/api/zipdeploy"
+        # SWA official upload endpoint
+        $deployUrl = "https://localshopwebapp.azurestaticapps.net/api/upload?api_token=$token"
 
-        Write-Host "Deploying to Static Web App..."
-        Invoke-RestMethod `
-          -Uri $deployUrl `
-          -Headers @{ "Authorization" = "Bearer $token" } `
+        Write-Host "Uploading ZIP to Static Web App..."
+        Invoke-RestMethod -Uri $deployUrl `
           -Method POST `
           -InFile $zipPath `
           -ContentType "application/zip"
 
-        Write-Host "Deployment completed."
+        Write-Host "Deployment completed successfully."
 
     displayName: 'Deploy to Azure Static Web Apps'
