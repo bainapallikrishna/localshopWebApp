@@ -5,7 +5,7 @@ pr:
   - main
 
 pool:
-  name: Default   # self-hosted Windows agent
+  name: Default   # your self-hosted Windows agent
 
 steps:
   - checkout: self
@@ -20,25 +20,48 @@ steps:
   # Install dependencies
   - script: |
       npm ci
-    displayName: 'Install dependencies'
+    displayName: 'Install npm packages'
 
-  # Build the app
+  # Build the React app
   - script: |
       npm run build
-    displayName: 'Build application'
+    displayName: 'Build React Application'
 
-  # Azure CLI Login + Deploy Static Web App manually (NO DOCKER)
+  # Install Static Web App CLI Extension Manually
   - task: AzureCLI@2
     inputs:
-      azureSubscription: "Azure-Service-Connection"
-      scriptType: "bash"
-      scriptLocation: "inlineScript"
+      azureSubscription: 'Azure-Service-Connection'   # IMPORTANT
+      scriptType: 'ps'
+      scriptLocation: 'inlineScript'
       inlineScript: |
-        echo "Uploading to Azure Static Web App..."
+        Write-Host "Installing Static Web App CLI extension..."
 
-        az staticwebapp upload \
-          --name localShopWebApp \
-          --resource-group localShopRG \
+        $ext = "$env:USERPROFILE\.azure\cliextensions\staticwebapp"
+        New-Item -ItemType Directory -Force -Path $ext | Out-Null
+
+        $url = "https://github.com/Azure/azure-cli-extensions/releases/latest/download/staticwebapp-1.0.0-py3-none-any.whl"
+        $wheel = "$ext\staticwebapp.whl"
+        Invoke-WebRequest -Uri $url -OutFile $wheel
+
+        az extension add --source $wheel --yes
+
+        Write-Host "Installed Extensions:"
+        az extension list
+    displayName: 'Install Static Web App CLI Extension'
+
+  # Deploy the React build folder
+  - task: AzureCLI@2
+    inputs:
+      azureSubscription: 'Azure-Service-Connection'
+      scriptType: 'ps'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        Write-Host "Deploying static web app..."
+
+        az staticwebapp upload `
+          --name localShopWebApp `
+          --resource-group localShopRG `
           --source build
 
-    displayName: "Deploy Static Web App"
+        Write-Host "Deployment completed!"
+    displayName: 'Deploy React App to Azure Static Web Apps'
