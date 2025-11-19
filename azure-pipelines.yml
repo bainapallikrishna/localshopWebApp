@@ -27,26 +27,18 @@ steps:
       npm run build
     displayName: 'Build application'
 
-  # Install Azure CLI (only needed if your agent doesn’t have AZ CLI)
-  - powershell: |
-      if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
-        Write-Host "Azure CLI not found. Installing..."
-        Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi
-        Start-Process msiexec.exe -ArgumentList "/I AzureCLI.msi /quiet" -Wait
-      }
-      az --version
-    displayName: "Ensure Azure CLI Installed"
-
-  # Deploy manually using AZ CLI (NO DOCKER NEEDED)
+  # Azure CLI Login + Deploy Static Web App manually (NO DOCKER)
   - task: AzureCLI@2
     inputs:
       azureSubscription: "Azure-Service-Connection"
-      scriptType: "ps"
+      scriptType: "bash"
       scriptLocation: "inlineScript"
       inlineScript: |
-        az staticwebapp upload `
-          --name localShopWebApp `
-          --resource-group localShopRG `
-          --source build `
-          --verbose
-    displayName: "Deploy to Azure Static Web Apps"
+        echo "Uploading to Azure Static Web App..."
+
+        az staticwebapp upload \
+          --name localShopWebApp \
+          --resource-group localShopRG \
+          --source build
+
+    displayName: "Deploy Static Web App"
