@@ -5,7 +5,7 @@ pr:
   - main
 
 pool:
-  name: Default   # self-hosted Windows agent
+  name: Default   # your self-hosted agent
 
 steps:
   - checkout: self
@@ -24,34 +24,10 @@ steps:
   - script: npm run build
     displayName: 'Build React app'
 
-  # Install Static Web Apps CLI extension (manual fix for Windows agents)
+  # Deploy React build folder without Docker
   - task: AzureCLI@2
     inputs:
-      azureSubscription: 'Azure-Service-Connection'  # <-- IMPORTANT
-      scriptType: 'ps'
-      scriptLocation: 'inlineScript'
-      inlineScript: |
-        Write-Host "Installing Static Web Apps CLI extension"
-
-        # Create extension folder
-        $ext = "$env:USERPROFILE\.azure\cliextensions\staticwebapp"
-        New-Item -ItemType Directory -Force -Path $ext | Out-Null
-
-        # Download the extension wheel file
-        $url = "https://github.com/Azure/azure-cli-extensions/releases/latest/download/staticwebapp-1.0.0-py3-none-any.whl"
-        $wheel = "$ext\staticwebapp.whl"
-        Invoke-WebRequest -Uri $url -OutFile $wheel
-
-        # Install extension from wheel
-        az extension add --source $wheel --yes
-
-        az extension list
-    displayName: 'Install Static Web Apps Extension'
-
-  # Deploy without Docker
-  - task: AzureCLI@2
-    inputs:
-      azureSubscription: 'Azure-Service-Connection' # <-- same service connection
+      azureSubscription: 'Azure-Service-Connection'
       scriptType: 'ps'
       scriptLocation: 'inlineScript'
       inlineScript: |
@@ -59,4 +35,4 @@ steps:
           --name localShopWebApp `
           --resource-group localShopRG `
           --source build
-    displayName: 'Deploy React App to Azure Static Web Apps'
+    displayName: 'Deploy to Azure Static Web Apps'
