@@ -5,30 +5,48 @@ pr:
   - main
 
 pool:
-  name: Default   # Your self-hosted Windows agent
+  name: Default   # self-hosted Windows agent
 
 steps:
   - checkout: self
     submodules: true
 
+  # Install Node.js
   - task: NodeTool@0
     inputs:
       versionSpec: '18.x'
     displayName: 'Setup Node.js'
 
+  # Install dependencies
   - script: |
       npm ci
     displayName: 'Install dependencies'
 
+  # Build the app
   - script: |
       npm run build
     displayName: 'Build application'
 
-  - task: AzureStaticWebApp@0
+  # Install Azure CLI (only needed if your agent doesn’t have AZ CLI)
+  - powershell: |
+      if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+        Write-Host "Azure CLI not found. Installing..."
+        Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi
+        Start-Process msiexec.exe -ArgumentList "/I AzureCLI.msi /quiet" -Wait
+      }
+      az --version
+    displayName: "Ensure Azure CLI Installed"
+
+  # Deploy manually using AZ CLI (NO DOCKER NEEDED)
+  - task: AzureCLI@2
     inputs:
-      azure_static_web_apps_api_token: $(AZURE_STATIC_WEB_APPS_API_TOKEN)
-      app_location: "/"
-      output_location: "build"
-      skip_app_build: false
-      deployment_environment: "production"
-    displayName: 'Deploy to Azure Static Web Apps'
+      azureSubscription: "Azure-Service-Connection"
+      scriptType: "ps"
+      scriptLocation: "inlineScript"
+      inlineScript: |
+        az staticwebapp upload `
+          --name localShopWebApp `
+          --resource-group localShopRG `
+          --source build `
+          --verbose
+    displayName: "Deploy to Azure Static Web Apps"
