@@ -47,9 +47,9 @@ steps:
 
       Write-Host "Token retrieved."
 
-      # Correct hostname
-      $hostname = "purple-coast-0b51eec00.3.azurestaticapps.net"
-      Write-Host "Deploying to: $hostname"
+      # Correct SWA deployment host
+      $deployHost = "purple-coast-0b51eec00.build.azurestaticapps.net"
+      Write-Host "Deploying to: $deployHost"
 
       # ZIP build folder
       $zipPath = "$(Build.SourcesDirectory)\build.zip"
@@ -58,10 +58,10 @@ steps:
       Add-Type -AssemblyName System.IO.Compression.FileSystem
       [System.IO.Compression.ZipFile]::CreateFromDirectory("$(Build.SourcesDirectory)\build", $zipPath)
 
-      Write-Host "ZIP created: $zipPath"
+      Write-Host "ZIP created at: $zipPath"
 
-      # The correct Static Web Apps deployment endpoint
-      $deployUrl = "https://$hostname/api/build/deploy?api_token=$token"
+      # Correct deployment endpoint
+      $deployUrl = "https://$deployHost/api/build/deploy?api_token=$token"
       Write-Host "Deploying to: $deployUrl"
 
       Invoke-RestMethod `
