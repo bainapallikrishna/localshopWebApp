@@ -5,7 +5,7 @@ pr:
   - main
 
 pool:
-  name: Default   # Your self-hosted agent
+  name: Default   # Self-hosted Windows agent
 
 steps:
   - checkout: self
@@ -14,32 +14,40 @@ steps:
   - task: NodeTool@0
     inputs:
       versionSpec: '18.x'
-    displayName: 'Setup Node.js'
+    displayName: "Setup Node.js"
 
   # Install React dependencies
   - script: npm ci
-    displayName: 'Install npm packages'
-    workingDirectory: '$(Build.SourcesDirectory)'
+    displayName: "Install npm packages"
+    workingDirectory: "$(Build.SourcesDirectory)"
 
-  # Build React app
+  # Build the React application
   - script: npm run build
-    displayName: 'Build React app'
-    workingDirectory: '$(Build.SourcesDirectory)'
+    displayName: "Build React app"
+    workingDirectory: "$(Build.SourcesDirectory)"
 
-  # Deploy React build folder to Azure Static Web App
+  # Deploy to Azure Static Web App using Azure CLI
   - task: AzureCLI@2
     inputs:
       azureSubscription: 'Azure-Service-Connection'
       scriptType: 'ps'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        # Ensure Azure CLI uses correct config location
+        Write-Host "Setting Azure CLI configuration directory..."
         $env:AZURE_CONFIG_DIR = "$env:USERPROFILE\.azure"
 
-        # Upload build folder to SWA
+        Write-Host "Disabling Azure CLI dynamic extension install..."
+        az config set extension.use_dynamic_install=no
+        az config set extension.run_after_dynamic_install=no
+
+        Write-Host "Installing Static Web App extension in user mode..."
+        az extension add --name staticwebapp --user --yes --only-show-errors
+
+        Write-Host "Starting Static Web App upload..."
         az staticwebapp upload `
           --name localShopWebApp `
           --resource-group localShopRG `
-          --source "$(Build.SourcesDirectory)\build"
+          --source "$(Build.SourcesDirectory)\build" `
+          --only-show-errors
 
-    displayName: 'Deploy to Azure Static Web Apps'
+    displayName: "Deploy to Azure Static Web Apps"
