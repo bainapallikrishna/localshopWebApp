@@ -5,7 +5,7 @@ pr:
   - main
 
 pool:
-  name: Default   # Self-hosted agent pool
+  name: Default
 
 steps:
   - checkout: self
@@ -21,7 +21,7 @@ steps:
     displayName: 'Install npm packages'
     workingDirectory: '$(Build.SourcesDirectory)'
 
-  # Build the React app
+  # Build React app
   - script: npm run build
     displayName: 'Build React app'
     workingDirectory: '$(Build.SourcesDirectory)'
@@ -33,14 +33,20 @@ steps:
       scriptType: 'ps'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        # Make Azure CLI use the correct user config
-        $env:AZURE_CONFIG_DIR = "C:\Users\agent\.azure"
+        # Use correct Azure CLI user folder
+        $env:AZURE_CONFIG_DIR = "C:\Users\baina\.azure"
 
-        # Stop Azure CLI from trying to auto-install system extensions
+        # Do NOT allow Azure CLI to auto-install system extensions
         az config set extension.use_dynamic_install=no
         az config set extension.run_after_dynamic_install=no
 
-        # Confirm the staticwebapp extension is detected
+        Write-Host "Detected SWA extension:"
         az extension list
 
-        # Deploy build folder to SWA
+        # Deploy build folder
+        az staticwebapp upload `
+          --name localShopWebApp `
+          --resource-group localShopRG `
+          --source "$(Build.SourcesDirectory)\build"
+
+    displayName: 'Deploy to Azure Static Web Apps'
