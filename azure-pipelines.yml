@@ -29,7 +29,7 @@ steps:
   # Deploy to Azure Static Web Apps
   - task: AzureCLI@2
     inputs:
-      azureSubscription: 'Azure-Service-Connection'
+      azureSubscription: 'localshopwebapp'
       scriptType: 'ps'
       scriptLocation: 'inlineScript'
       inlineScript: |
