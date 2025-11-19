@@ -21,7 +21,7 @@ steps:
     displayName: 'Install npm packages'
     workingDirectory: '$(Build.SourcesDirectory)'
 
-  # Build React app
+  # Build the React app
   - script: npm run build
     displayName: 'Build React app'
     workingDirectory: '$(Build.SourcesDirectory)'
@@ -33,17 +33,21 @@ steps:
       scriptType: 'ps'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        # Use correct Azure CLI user folder
-        $env:AZURE_CONFIG_DIR = "C:\Users\baina\.azure"
+        # Azure CLI profile for NETWORK SERVICE account
+        $env:AZURE_CONFIG_DIR = "C:\Windows\ServiceProfiles\NetworkService\.azure"
 
-        # Do NOT allow Azure CLI to auto-install system extensions
+        Write-Host "Using Azure Config Directory:"
+        Write-Host $env:AZURE_CONFIG_DIR
+
+        # Disable dynamic extension installation (avoids Program Files writes)
         az config set extension.use_dynamic_install=no
         az config set extension.run_after_dynamic_install=no
 
-        Write-Host "Detected SWA extension:"
+        # Validate that the Static Web Apps extension is loaded
+        Write-Host "Loaded Azure CLI Extensions:"
         az extension list
 
-        # Deploy build folder
+        # Deploy the React build folder
         az staticwebapp upload `
           --name localShopWebApp `
           --resource-group localShopRG `
