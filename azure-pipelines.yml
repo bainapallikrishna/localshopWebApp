@@ -5,7 +5,7 @@ pr:
   - main
 
 pool:
-  name: Default   # your self-hosted agent
+  name: Default   # Your self-hosted agent
 
 steps:
   - checkout: self
@@ -19,21 +19,27 @@ steps:
   # Install React dependencies
   - script: npm ci
     displayName: 'Install npm packages'
+    workingDirectory: '$(Build.SourcesDirectory)'
 
   # Build React app
   - script: npm run build
     displayName: 'Build React app'
+    workingDirectory: '$(Build.SourcesDirectory)'
 
-  # Deploy React build folder without Docker
+  # Deploy React build folder to Azure Static Web App
   - task: AzureCLI@2
     inputs:
       azureSubscription: 'Azure-Service-Connection'
       scriptType: 'ps'
       scriptLocation: 'inlineScript'
       inlineScript: |
-       $env:AZURE_CONFIG_DIR = "C:\Users\baina\.azure"
+        # Ensure Azure CLI uses correct config location
+        $env:AZURE_CONFIG_DIR = "$env:USERPROFILE\.azure"
+
+        # Upload build folder to SWA
         az staticwebapp upload `
           --name localShopWebApp `
           --resource-group localShopRG `
-          --source build
+          --source "$(Build.SourcesDirectory)\build"
+
     displayName: 'Deploy to Azure Static Web Apps'
