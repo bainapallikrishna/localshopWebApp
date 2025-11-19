@@ -31,6 +31,7 @@ steps:
       scriptType: 'ps'
       scriptLocation: 'inlineScript'
       inlineScript: |
+       $env:AZURE_CONFIG_DIR = "C:\Users\baina\.azure"
         az staticwebapp upload `
           --name localShopWebApp `
           --resource-group localShopRG `
