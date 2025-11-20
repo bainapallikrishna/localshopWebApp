@@ -4,8 +4,9 @@ trigger:
 pr:
 - main
 
+# ✔ Must use Linux agent
 pool:
-  name: Default
+  vmImage: 'ubuntu-latest'
 
 steps:
 - checkout: self
@@ -21,53 +22,21 @@ steps:
   workingDirectory: '$(Build.SourcesDirectory)'
   displayName: 'Install npm packages'
 
-# Build React
+# Build React app
 - script: npm run build
   workingDirectory: '$(Build.SourcesDirectory)'
   displayName: 'Build React app'
 
-# Deploy to SWA
-- task: AzureCLI@2
+# ✔ Official working SWA deploy task
+- task: AzureStaticWebApp@0
   inputs:
-    azureSubscription: 'localshopwebapp'
-    scriptType: 'ps'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      Write-Host "Fetching SWA deployment token..."
-      $token = az staticwebapp secrets list `
-        --name localShopWebApp `
-        --resource-group localShopRG `
-        --query properties.apiKey -o tsv
+    # ✔ Create "deployment_token" in Azure DevOps Library
+    azure_static_web_apps_api_token: $(deployment_token)
 
-      if (-not $token) {
-        Write-Error "Failed to retrieve deployment token"
-        exit 1
-      }
+    # ✔ Root folder of React app
+    app_location: "/"
 
-      Write-Host "Token OK"
+    # ✔ Build output folder
+    output_location: "build"
 
-      # Deployment host
-      $deployHost = "purple-coast-0b51eec00.build.azurestaticapps.net"
-
-      # ZIP build output
-      $zipPath = "$(Build.SourcesDirectory)\build.zip"
-      if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-
-      Add-Type -AssemblyName System.IO.Compression.FileSystem
-
-      # FIXED: One-line CreateFromDirectory call
-      [System.IO.Compression.ZipFile]::CreateFromDirectory("$(Build.SourcesDirectory)\build", $zipPath)
-
-      Write-Host "ZIP ready"
-
-      # Final deploy URL
-      $deployUrl = "https://$deployHost/api/build/deploy?api_token=$token"
-      Write-Host "Deploying to $deployUrl"
-
-      Invoke-RestMethod -Uri $deployUrl `
-        -Method POST `
-        -InFile $zipPath `
-        -ContentType "application/octet-stream"
-
-      Write-Host "🎉 Deployment SUCCESS!"
-  displayName: 'Deploy to Azure Static Web Apps'
+  displayName: "Deploy to Azure Static Web Apps"
