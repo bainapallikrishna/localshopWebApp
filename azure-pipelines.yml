@@ -4,9 +4,8 @@ trigger:
 pr:
 - main
 
-# ✔ Must use Linux agent
 pool:
-  vmImage: 'ubuntu-latest'
+  name: Default   # your self-hosted Windows agent
 
 steps:
 - checkout: self
@@ -22,21 +21,36 @@ steps:
   workingDirectory: '$(Build.SourcesDirectory)'
   displayName: 'Install npm packages'
 
-# Build React app
+# Build React
 - script: npm run build
   workingDirectory: '$(Build.SourcesDirectory)'
   displayName: 'Build React app'
 
-# ✔ Official working SWA deploy task
-- task: AzureStaticWebApp@0
-  inputs:
-    # ✔ Create "deployment_token" in Azure DevOps Library
-    azure_static_web_apps_api_token: $(deployment_token)
-
-    # ✔ Root folder of React app
-    app_location: "/"
-
-    # ✔ Build output folder
-    output_location: "build"
-
+# Deploy using SWA CLI (works on Windows)
+- task: AzureCLI@2
   displayName: "Deploy to Azure Static Web Apps"
+  inputs:
+    azureSubscription: 'localshopwebapp'
+    scriptType: ps
+    scriptLocation: inlineScript
+    inlineScript: |
+      Write-Host "Fetching deployment token..."
+      $token = az staticwebapp secrets list `
+        --name localShopWebApp `
+        --resource-group localShopRG `
+        --query properties.apiKey -o tsv
+
+      if (-not $token) {
+        Write-Error "Failed to retrieve SWA token"
+        exit 1
+      }
+
+      Write-Host "Installing SWA CLI..."
+      npm install -g @azure/static-web-apps-cli
+
+      Write-Host "Deploying using SWA CLI..."
+      swa deploy `
+        --app-location "$(Build.SourcesDirectory)/build" `
+        --deployment-token $token
+
+      Write-Host "🎉 Deployment SUCCESS!"
