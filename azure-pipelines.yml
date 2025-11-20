@@ -54,4 +54,20 @@ steps:
       if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 
       Add-Type -AssemblyName System.IO.Compression.FileSystem
-      [System.IO.Compression.ZipFile]::CreateFromDirectory(
+
+      # FIXED: One-line CreateFromDirectory call
+      [System.IO.Compression.ZipFile]::CreateFromDirectory("$(Build.SourcesDirectory)\build", $zipPath)
+
+      Write-Host "ZIP ready"
+
+      # Final deploy URL
+      $deployUrl = "https://$deployHost/api/build/deploy?api_token=$token"
+      Write-Host "Deploying to $deployUrl"
+
+      Invoke-RestMethod -Uri $deployUrl `
+        -Method POST `
+        -InFile $zipPath `
+        -ContentType "application/octet-stream"
+
+      Write-Host "🎉 Deployment SUCCESS!"
+  displayName: 'Deploy to Azure Static Web Apps'
