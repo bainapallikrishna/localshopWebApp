@@ -4,9 +4,8 @@ trigger:
 pr:
 - main
 
-# ✔ Use Linux agent (required for Static Web Apps)
 pool:
-  vmImage: 'ubuntu-latest'
+  name: Default
 
 steps:
 - checkout: self
@@ -22,22 +21,53 @@ steps:
   workingDirectory: '$(Build.SourcesDirectory)'
   displayName: 'Install npm packages'
 
-# Build React App
+# Build React
 - script: npm run build
   workingDirectory: '$(Build.SourcesDirectory)'
   displayName: 'Build React app'
 
-# ✔ Deploy to Azure Static Web Apps (official task)
-- task: AzureStaticWebApp@0
+# Deploy to SWA
+- task: AzureCLI@2
   inputs:
-    # ✔ You MUST create this variable in Azure DevOps Library:
-    # Name: deployment_token
-    azure_static_web_apps_api_token: $(deployment_token)
+    azureSubscription: 'localshopwebapp'
+    scriptType: 'ps'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      Write-Host "Fetching SWA deployment token..."
+      $token = az staticwebapp secrets list `
+        --name localShopWebApp `
+        --resource-group localShopRG `
+        --query properties.apiKey -o tsv
 
-    # Path of React app root
-    app_location: "/"
+      if (-not $token) {
+        Write-Error "Failed to retrieve deployment token"
+        exit 1
+      }
 
-    # React build output folder
-    output_location: "build"
+      Write-Host "Token OK"
 
-  displayName: "Deploy to Azure Static Web Apps"
+      # Deployment host
+      $deployHost = "purple-coast-0b51eec00.build.azurestaticapps.net"
+
+      # ZIP build output
+      $zipPath = "$(Build.SourcesDirectory)\build.zip"
+      if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+
+      Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+      # FIXED: One-line CreateFromDirectory call
+      [System.IO.Compression.ZipFile]::CreateFromDirectory("$(Build.SourcesDirectory)\build", $zipPath)
+
+      Write-Host "ZIP ready"
+
+      # Final deploy URL
+      $deployUrl = "https://$deployHost/api/build/deploy?api_token=$token"
+      Write-Host "Deploying to $deployUrl"
+
+      Invoke-RestMethod -Uri $deployUrl `
+        -Method POST `
+        -InFile $zipPath `
+        -ContentType "application/octet-stream"
+
+      Write-Host "🎉 Deployment SUCCESS!"
+  displayName: 'Deploy to Azure Static Web Apps'
